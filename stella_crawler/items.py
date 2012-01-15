@@ -10,7 +10,7 @@ class StellaCrawlerItem(Item):
     brand = Field()
     price = Field()
     fabric = Field()
-    color = Field()          # There may be more than one color
+    colors = Field()          # There may be more than one color
     num_colors = Field()
     length = Field()
     fabrication = Field()
