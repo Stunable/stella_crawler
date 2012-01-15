@@ -43,7 +43,7 @@ class ShopbopSpider(BaseSpider):
         # Randomization here
         categories = hxs.select('//a[@class=" leftNavCategoryLink"]/@href').extract()
         ## FIXME: Using only one category for testing
-        for url in categories[5:6]:
+        for url in categories:
             self.log("Got category url %s to yield" % url)
             yield Request("http://www.shopbop.com"+url, callback=self.parse_category)
 

@@ -1,25 +1,25 @@
 * Stella Crawler
 
-** Description
+** Info
 
-   The Stella Crawler is a package built with the scrapy framework, and is 
-   located in the sub-directory also named `stella_crawler`.
+   a web crawler that scrapes for clothing and fashion items. Uses the 
+   scrapy framework to crawl the web, and stores the data in a mongodb
+   database. 
 
-** Collecting price averages 
+   The module is the stella_crawler dir within this repo. It contains
+   the pipelines, items, and spiders. 
 
-*** TODO Scrape all clothes and create .csv of products
+** Pipelines
 
-*** Final format
-**** 2 sheets of just averages for each - brand, type
-**** 2 files with many sheets. 
+	ItemValidationPipeline
+	DuplicatesPipeline
+	DatabasePipeline
+	
+** Spiders 
+   
+   Shopbop - www.shopbop.com
 
-	 1. average by type: 
-		average sheet
-		type sheets
+** Improvements
 
-	 2. average by brand:
-		average sheet
-		brand sheets
-
-
+*** TODO Extract information from description field
 
