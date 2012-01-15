@@ -42,8 +42,8 @@ class ShopbopSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         # Randomization here
         categories = hxs.select('//a[@class=" leftNavCategoryLink"]/@href').extract()
-        # DEBUG: just using one category for testing
-        for url in categories[:1]:
+        ## FIXME: Ensure all categories parse correctly
+        for url in categories:
             self.log("Got category url %s to yield" % url)
             yield Request("http://www.shopbop.com"+url, callback=self.parse_category)
 
@@ -54,17 +54,22 @@ class ShopbopSpider(BaseSpider):
         """
         hxs = HtmlXPathSelector(response)
         # Randomization here
-        subcategories = hxs.select('//li[@class="leftNavSubcategoryLi"]/a/@href').extract()
+        subcategories = hxs.select(
+            '//li[@class="leftNavSubcategoryLi"]/a/@href').extract()
         
-        # Getting rid of 'all' subcategory to avoid duplicates
-        assert str(subcategories[0]).find("all") > 0, \
-            "parse_category: all not the first item in list of subcategories"
-        subcategories.pop(0)
+        if subcategories: 
+            # Getting rid of 'all' subcategory to avoid duplicates
+            for s in subcategories: 
+                if s == 'All Jeans':
+                    subcategories.remove(s)
         
-        # DEBUG: just using one subcategory for testing
-        for url in subcategories[:1]:
-            # Add the baseIndex=0 in here to be able to crawl in next method
-            yield Request("http://www.shopbop.com"+url+"?baseIndex=0", callback=self.parse_subcategory)
+            ## DEBUG: just using one subcategory for testing
+            for url in subcategories[:1]:
+                # Add the baseIndex=0 in here to be able to crawl in next method
+                yield Request("http://www.shopbop.com"+url+"?baseIndex=0", 
+                              callback=self.parse_subcategory)
+        else: 
+            yield Request(response.url, callback=self.parse_subcategory)
 
     def parse_subcategory(self, response):
         """Parses the subcategory page, i.e. the page in which we will begin 
