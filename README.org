@@ -1,0 +1,25 @@
+* Stella Crawler
+
+** Description
+
+   The Stella Crawler is a package built with the scrapy framework, and is 
+   located in the sub-directory also named `stella_crawler`.
+
+** Collecting price averages 
+
+*** TODO Scrape all clothes and create .csv of products
+
+*** Final format
+**** 2 sheets of just averages for each - brand, type
+**** 2 files with many sheets. 
+
+	 1. average by type: 
+		average sheet
+		type sheets
+
+	 2. average by brand:
+		average sheet
+		brand sheets
+
+
+
