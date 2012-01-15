@@ -43,7 +43,7 @@ class ShopbopSpider(BaseSpider):
         # Randomization here
         categories = hxs.select('//a[@class=" leftNavCategoryLink"]/@href').extract()
         ## FIXME: Using only one category for testing
-        for url in categories[:1]:
+        for url in categories[5:6]:
             self.log("Got category url %s to yield" % url)
             yield Request("http://www.shopbop.com"+url, callback=self.parse_category)
 
@@ -68,8 +68,7 @@ class ShopbopSpider(BaseSpider):
             subcategories[:] = filter(lambda s: s.find('-all-jeans') == -1, 
                                       subcategories)
             
-            ## DEBUG: just using one subcategory for testing
-            for url in subcategories[:1]:
+            for url in subcategories:
                 self.log("parse_category: yielding "+url+" as next subcategory")
                 # Add the baseIndex=0 in here to be able to crawl in next method
                 yield Request("http://www.shopbop.com"+url+"?baseIndex=0", 
@@ -104,7 +103,6 @@ class ShopbopSpider(BaseSpider):
             if curr_index < (num_items - 40):
                 url = url[:-len(str(curr_index))] + str(curr_index + 40)
                 self.log("REQUEST::SUB_INDEX_LINK: %s" % url)
-                ## FIXME: disabled next links for testing.
                 yield Request(url, callback=self.parse_subcategory)
         else: # we are at baseIndex=0
             if 0 < (num_items - 40):
@@ -169,11 +167,21 @@ class ShopbopSpider(BaseSpider):
         item['subcategory'] = subcategory
         item['brand'] = hxs.select(
             '//h1[@class="brandLink"]/a/text()').extract()[0]
-        item['price'] = hxs.select(
+        item['item_id'] = hxs.select(
+            '//span[@id="productCode"]/text()').extract()[0]
+        # if there is a sale, get original price
+        price = hxs.select('//span[@class="originalRetailPrice"]/text()')
+        if price: 
+            price = price.extract()[0]
+        else: 
+            price = hxs.select(
             '//div[@class="priceBlock"]/text()').extract()[0].strip().rstrip()
+        item['price'] = price[1:] # Removing the $ sign
+        
         item['name'] = hxs.select(
             '//div[@id="productTitle"]/text()').extract()[0]
-        # From description box
+        
+        # RE's from description box
         item['description'] = description_box.extract()[0].strip().rstrip()
         test_fabrication = description_box.re(
             r"""(?<=Fabrication: )([\w+\W?]+)""")

@@ -13,3 +13,8 @@ SPIDER_MODULES = ['stella_crawler.spiders']
 NEWSPIDER_MODULE = 'stella_crawler.spiders'
 USER_AGENT = '%s/%s' % (BOT_NAME, BOT_VERSION)
 
+ITEM_PIPELINES = [
+    'stella_crawler.pipelines.ItemValidationPipeline',
+    'stella_crawler.pipelines.DuplicatesPipeline',
+    'stella_crawler.pipelines.DatabasePipeline',
+]

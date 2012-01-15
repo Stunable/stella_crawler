@@ -7,6 +7,7 @@ from scrapy.item import Item, Field
 
 class StellaCrawlerItem(Item):
     # All items have these fields
+    item_id = Field()      # The shopbop product code aka style number
     brand = Field()
     price = Field()
     fabric = Field()
