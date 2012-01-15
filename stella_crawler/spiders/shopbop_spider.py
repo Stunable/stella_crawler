@@ -42,8 +42,8 @@ class ShopbopSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         # Randomization here
         categories = hxs.select('//a[@class=" leftNavCategoryLink"]/@href').extract()
-        ## FIXME: Ensure all categories parse correctly
-        for url in categories:
+        ## FIXME: Using only one category for testing
+        for url in categories[:1]:
             self.log("Got category url %s to yield" % url)
             yield Request("http://www.shopbop.com"+url, callback=self.parse_category)
 
@@ -56,24 +56,27 @@ class ShopbopSpider(BaseSpider):
         # Randomization here
         subcategories = hxs.select(
             '//li[@class="leftNavSubcategoryLi"]/a/@href').extract()
+
         # Some weird shopbop redirect for the subcategory. 
-        if response.url.find('clothes-leggings'): 
+        if response.url.find('clothes-leggings') != -1: 
             subcategories = None
-        elif response.url.find('clothing-vests'):
+        elif response.url.find('clothing-vests') != -1:
             subcategories = None
         
         if subcategories:
             # Getting rid of 'all' subcategory to avoid duplicates
-            for s in subcategories: 
-                if s.find('All'):
-                    subcategories.remove(s)
-
+            subcategories[:] = filter(lambda s: s.find('-all-jeans') == -1, 
+                                      subcategories)
+            
             ## DEBUG: just using one subcategory for testing
             for url in subcategories[:1]:
+                self.log("parse_category: yielding "+url+" as next subcategory")
                 # Add the baseIndex=0 in here to be able to crawl in next method
                 yield Request("http://www.shopbop.com"+url+"?baseIndex=0", 
                               callback=self.parse_subcategory)
         else: 
+            self.log("parse_category: no subcategories found from "
+                     +response.url)
             yield Request(response.url+"?baseIndex=0", 
                           callback=self.parse_subcategory)
 
@@ -102,17 +105,17 @@ class ShopbopSpider(BaseSpider):
                 url = url[:-len(str(curr_index))] + str(curr_index + 40)
                 self.log("REQUEST::SUB_INDEX_LINK: %s" % url)
                 ## FIXME: disabled next links for testing.
-                #yield Request(url, callback=self.parse_subcategory)
+                yield Request(url, callback=self.parse_subcategory)
         else: # we are at baseIndex=0
             if 0 < (num_items - 40):
                 url = url[:-1] + "40"
                 self.log("REQUEST::SUB_INDEX_LINK %s" % url)
-                #yield Request(url, callback=self.parse_subcategory)
+                yield Request(url, callback=self.parse_subcategory)
                 
         # Part 2: Items
         item_links = hxs.select(
             '//a[@class="productDetailLink"]/@href').extract()
-        for url in item_links[:1]:
+        for url in item_links:
             self.log("REQUEST::ITEM_LINK: %s" % url)
             yield Request("http://www.shopbop.com"+url, 
                           callback=self.parse_item_page)
