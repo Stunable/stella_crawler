@@ -56,20 +56,26 @@ class ShopbopSpider(BaseSpider):
         # Randomization here
         subcategories = hxs.select(
             '//li[@class="leftNavSubcategoryLi"]/a/@href').extract()
+        # Some weird shopbop redirect for the subcategory. 
+        if response.url.find('clothes-leggings'): 
+            subcategories = None
+        elif response.url.find('clothing-vests'):
+            subcategories = None
         
-        if subcategories: 
+        if subcategories:
             # Getting rid of 'all' subcategory to avoid duplicates
             for s in subcategories: 
-                if s == 'All Jeans':
+                if s.find('All'):
                     subcategories.remove(s)
-        
+
             ## DEBUG: just using one subcategory for testing
             for url in subcategories[:1]:
                 # Add the baseIndex=0 in here to be able to crawl in next method
                 yield Request("http://www.shopbop.com"+url+"?baseIndex=0", 
                               callback=self.parse_subcategory)
         else: 
-            yield Request(response.url, callback=self.parse_subcategory)
+            yield Request(response.url+"?baseIndex=0", 
+                          callback=self.parse_subcategory)
 
     def parse_subcategory(self, response):
         """Parses the subcategory page, i.e. the page in which we will begin 
@@ -79,11 +85,11 @@ class ShopbopSpider(BaseSpider):
         """
         hxs = HtmlXPathSelector(response)
         # Part 1: 'Next' links
-        # Max items per page is 100, so might as well just click next for all of them
-        # Clicking next involves some JS bullshit of inner attributes, so we will just
         # manually tweak the url
-        ## In order to do this, we have to find the max # of clothes in this subcategory
-        num_items = hxs.select('//div[@class="paginationHolder"]/div/text()').extract()
+        # In order to do this, we have to find the max # of clothes 
+        # in this subcategory
+        num_items = hxs.select(
+            '//div[@class="paginationHolder"]/div/text()').extract()
         num_items = int(num_items[0].rstrip('items').rstrip())
         url = response.url
 
@@ -104,10 +110,12 @@ class ShopbopSpider(BaseSpider):
                 #yield Request(url, callback=self.parse_subcategory)
                 
         # Part 2: Items
-        item_links = hxs.select('//a[@class="productDetailLink"]/@href').extract()
+        item_links = hxs.select(
+            '//a[@class="productDetailLink"]/@href').extract()
         for url in item_links[:1]:
             self.log("REQUEST::ITEM_LINK: %s" % url)
-            yield Request("http://www.shopbop.com"+url, callback=self.parse_item_page)
+            yield Request("http://www.shopbop.com"+url, 
+                          callback=self.parse_item_page)
 
     def parse_item_page(self,response):
         """ Parses the item page to extract all item information into item 
@@ -133,7 +141,7 @@ class ShopbopSpider(BaseSpider):
             potential_color = swatches_div.select(
                 'img['+str(num_colors+1)+']/@title').extract()
             if not potential_color: break
-            colors += 1
+            num_colors += 1
 
         ## TODO: Why is this a list?
         item['image_urls'] = [hxs.select(
@@ -141,18 +149,21 @@ class ShopbopSpider(BaseSpider):
         # The Shopbop description box contains many elements.
         description_box = hxs.select('//div[@id="descriptionDiv"]/text()')
         # The breadcrumbs tell us which category, subcategory this item is from.
-        category_breadcrumb = hxs.select(
+        category = hxs.select(
             '//div[@id="breadcrumbs"]/a[2]/text()').extract()[0]
-        subcategory_breadcrumb = hxs.select(
-            '//div[@id="breadcrumbs"]/a[3]/text()').extract()[0]
-        
+        subcategory_maybe = hxs.select(
+            '//div[@id="breadcrumbs"]/a[3]/text()').extract()
+        subcategory = NA
+        if subcategory_maybe:
+            subcategory = subcategory_maybe[0]
+
         # Field population
         # Housekeeping
         item['num_colors'] = num_colors
         item['colors'] = colors
         # Not from description box
-        item['category'] = category_breadcrumb
-        item['subcategory'] = subcategory_breadcrumb
+        item['category'] = category
+        item['subcategory'] = subcategory
         item['brand'] = hxs.select(
             '//h1[@class="brandLink"]/a/text()').extract()[0]
         item['price'] = hxs.select(
